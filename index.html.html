@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 闖關版 - Travel English</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --bg-color: #f4f7f6;
+            --chat-bg: #ffffff;
+            --user-msg-bg: #dcf8c6;
+            --bot-msg-bg: #e9e9eb;
+            --mic-active: #ff4b4b;
+            --success: #28a745;
+            --error: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--chat-bg);
+            height: 95vh;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 { margin: 0; font-size: 1.1rem; }
+        .status { font-size: 0.8rem; opacity: 0.9; }
+
+        /* Controls */
+        .controls {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; flex-grow: 1; }
+        
+        button#restart-btn {
+            padding: 8px 15px; background-color: #ff6b6b; color: white;
+            border: none; border-radius: 5px; cursor: pointer;
+        }
+
+        .mode-switch {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            font-size: 0.9rem; background: #eef2f5; padding: 8px; border-radius: 8px;
+            cursor: pointer; user-select: none;
+        }
+        .mode-switch input { width: 18px; height: 18px; cursor: pointer;}
+
+        /* Chat Area */
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 15px;
+            line-height: 1.4;
+            font-size: 1rem;
+            position: relative;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot {
+            align-self: flex-start;
+            background-color: var(--bot-msg-bg);
+            color: #333;
+            border-bottom-left-radius: 2px;
+        }
+
+        .user {
+            align-self: flex-end;
+            background-color: var(--user-msg-bg);
+            color: #000;
+            border-bottom-right-radius: 2px;
+        }
+
+        /* Translation Text */
+        .trans-text {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.85rem;
+            color: #666;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 4px;
+        }
+
+        /* Blur Effect */
+        .blur-text {
+            filter: blur(6px); background-color: #ccc; color: transparent;
+            user-select: none; cursor: pointer; transition: all 0.3s ease; border-radius: 4px;
+        }
+        .blur-text.revealed {
+            filter: none; background-color: transparent; color: #333; cursor: text; user-select: text;
+        }
+
+        /* Feedback Icons (Check/Cross) */
+        .feedback-icon {
+            position: absolute;
+            right: -10px;
+            bottom: -10px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .feedback-success { background-color: var(--success); }
+        .feedback-error { background-color: var(--error); }
+
+        /* Speaker Button */
+        .speak-btn {
+            display: inline-block; margin-left: 10px; background: none; border: none;
+            cursor: pointer; font-size: 1.2rem; vertical-align: middle; opacity: 0.7;
+        }
+        .speak-btn:hover { opacity: 1; transform: scale(1.1); }
+
+        /* Input Area */
+        .input-area {
+            padding: 15px;
+            background: #fff;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; outline: none; font-size: 1rem;
+        }
+
+        button.send-btn {
+            background-color: var(--primary-color); color: white; border: none;
+            padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold;
+        }
+
+        button.mic-btn {
+            background-color: #666; color: white; border: none;
+            width: 42px; height: 42px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.3s;
+        }
+        button.mic-btn.listening {
+            background-color: var(--mic-active);
+            box-shadow: 0 0 10px var(--mic-active);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 75, 75, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 75, 75, 0); }
+        }
+
+        button.hint-btn {
+            background-color: #f0ad4e; color: white; border: none;
+            padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🏆 English Challenge</h1>
+        <span class="status" id="voice-status">Voice: Init...</span>
+    </header>
+
+    <div class="controls">
+        <div class="control-row">
+            <select id="scenario-select">
+                <option value="immigration">🛃 Immigration (入境)</option>
+                <option value="hotel">🏨 Hotel (飯店)</option>
+                <option value="cafe">☕ Cafe (咖啡)</option>
+                <option value="shopping">🛍️ Shopping (購物)</option>
+                <option value="taxi">🚕 Taxi (計程車)</option>
+            </select>
+            <button id="restart-btn" onclick="startScenario()">Reset</button>
+        </div>
+        <label class="mode-switch">
+            <input type="checkbox" id="listening-mode">
+            <span>👂 Hide Text (Listen Only)</span>
+        </label>
+    </div>
+
+    <div id="chat-box"></div>
+
+    <div class="input-area">
+        <button class="hint-btn" onclick="showHint()">💡 Hint</button>
+        <button class="mic-btn" id="mic-btn" onclick="toggleMic()" title="Mic ON/OFF">🎤</button>
+        <input type="text" id="user-input" placeholder="Type or Speak..." onkeypress="handleKeyPress(event)">
+        <button class="send-btn" onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    // --- 1. Data Scenarios (Added 'cn' and 'keywords') ---
+    const scenarios = {
+        immigration: {
+            steps: [
+                { 
+                    bot: "Good morning. May I see your passport?", 
+                    cn: "早安，我可以看看您的護照嗎？",
+                    hint: "Here is my passport.",
+                    keywords: ["passport", "here", "yes", "sure", "ok"] 
+                },
+                { 
+                    bot: "Thank you. What is the purpose of your visit?", 
+                    cn: "謝謝。請問您這次造訪的目的是什麼？",
+                    hint: "I am here for a vacation.",
+                    keywords: ["vacation", "travel", "sightseeing", "trip", "holiday", "business", "visit"] 
+                },
+                { 
+                    bot: "How long will you be staying?", 
+                    cn: "您預計會停留多久？",
+                    hint: "For one week.",
+                    keywords: ["week", "day", "month", "stay", "long"] 
+                },
+                { 
+                    bot: "Where are you staying?", 
+                    cn: "請問您將住在哪裡？",
+                    hint: "At the Marriott Hotel.",
+                    keywords: ["hotel", "staying", "at", "airbnb", "friend"] 
+                },
+                { 
+                    bot: "Do you have anything to declare?", 
+                    cn: "您有任何需要申報的物品嗎？",
+                    hint: "No, I have nothing to declare.",
+                    keywords: ["no", "nothing", "declare"] 
+                },
+                { 
+                    bot: "Okay. Welcome to the country!", 
+                    cn: "好的。歡迎來到本國！",
+                    hint: "Thank you!",
+                    keywords: ["thank", "thanks"] 
+                }
+            ]
+        },
+        hotel: {
+            steps: [
+                { 
+                    bot: "Good afternoon. Checking in?", 
+                    cn: "午安。是要辦理入住嗎？",
+                    hint: "Yes, I have a reservation.",
+                    keywords: ["yes", "check", "reservation", "booking"] 
+                },
+                { 
+                    bot: "Can I see your ID and credit card?", 
+                    cn: "可以借我看您的證件和信用卡嗎？",
+                    hint: "Here you go.",
+                    keywords: ["here", "yes", "sure", "ok", "card", "id"] 
+                },
+                { 
+                    bot: "Thank you. You are in room 305. Here is your key.", 
+                    cn: "謝謝。您的房號是 305。這是鑰匙。",
+                    hint: "Thanks. Is breakfast included?",
+                    keywords: ["thank", "thanks", "breakfast", "wifi", "ok"] 
+                },
+                { 
+                    bot: "Yes, breakfast is from 6 to 10.", 
+                    cn: "有的，早餐時間是 6 點到 10 點。",
+                    hint: "Great, thanks.",
+                    keywords: ["thank", "good", "great", "ok", "perfect"] 
+                }
+            ]
+        },
+        cafe: {
+            steps: [
+                { 
+                    bot: "Hi! What can I get for you?", 
+                    cn: "嗨！想喝點什麼嗎？",
+                    hint: "I'll have a hot latte.",
+                    keywords: ["latte", "coffee", "tea", "american", "have", "get", "please"] 
+                },
+                { 
+                    bot: "What size? Small or Large?", 
+                    cn: "什麼尺寸？小杯還是大杯？",
+                    hint: "Large, please.",
+                    keywords: ["small", "medium", "large", "big"] 
+                },
+                { 
+                    bot: "Anything else?", 
+                    cn: "還需要其他的嗎？",
+                    hint: "No, that's all.",
+                    keywords: ["no", "that's", "all", "yes", "muffin", "cake"] 
+                },
+                { 
+                    bot: "Okay, $5 please.", 
+                    cn: "好的，總共 5 美元。",
+                    hint: "Here is the money.",
+                    keywords: ["here", "card", "cash", "money"] 
+                }
+            ]
+        },
+        shopping: {
+            steps: [
+                { 
+                    bot: "Can I help you find anything?", 
+                    cn: "需要我幫您找什麼嗎？",
+                    hint: "I'm looking for shoes.",
+                    keywords: ["looking", "find", "shoes", "bag", "clothes", "just", "no"] 
+                },
+                { 
+                    bot: "These are on sale for $50.", 
+                    cn: "這些正在特價，只要 50 美元。",
+                    hint: "Can I try them on?",
+                    keywords: ["try", "expensive", "cheap", "discount", "ok"] 
+                },
+                { 
+                    bot: "Sure. How do they fit?", 
+                    cn: "當然。穿起來合適嗎？",
+                    hint: "They fit perfectly.",
+                    keywords: ["fit", "good", "nice", "perfect", "well", "buy", "take"] 
+                },
+                { 
+                    bot: "Great. Cash or card?", 
+                    cn: "太好了。付現還是刷卡？",
+                    hint: "I will pay with card.",
+                    keywords: ["cash", "card", "credit"] 
+                }
+            ]
+        },
+        taxi: {
+             steps: [
+                { 
+                    bot: "Hello, where to?", 
+                    cn: "哈囉，要去哪裡？",
+                    hint: "To the airport, please.",
+                    keywords: ["airport", "hotel", "city", "center", "station", "please", "to"] 
+                },
+                { 
+                    bot: "Which terminal?", 
+                    cn: "哪個航廈？",
+                    hint: "Terminal 2.",
+                    keywords: ["terminal", "one", "two", "1", "2", "international"] 
+                },
+                { 
+                    bot: "Okay. Taking the highway.", 
+                    cn: "好，我們走高速公路。",
+                    hint: "How long will it take?",
+                    keywords: ["long", "time", "ok", "sure", "fine"] 
+                },
+                { 
+                    bot: "About 30 minutes. That will be $40.", 
+                    cn: "大約 30 分鐘。車資是 40 美元。",
+                    hint: "Here you go.",
+                    keywords: ["here", "keep", "change", "thanks"] 
+                }
+            ]
+        }
+    };
+
+    let currentScenario = 'immigration';
+    let currentStep = 0;
+    let isScenarioComplete = false;
+
+    // --- 2. Speech Synthesis ---
+    const synth = window.speechSynthesis;
+    let voices = [];
+
+    function loadVoices() {
+        voices = synth.getVoices();
+        document.getElementById('voice-status').innerText = "Ready";
+    }
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
+
+    function speakText(text) {
+        if (synth.speaking) synth.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9; 
+        const preferredVoice = voices.find(v => v.name.includes('Google US') || v.name.includes('Zira') || v.lang === 'en-US');
+        if (preferredVoice) utterance.voice = preferredVoice;
+        synth.speak(utterance);
+    }
+
+    // --- 3. Speech Recognition ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const micBtn = document.getElementById('mic-btn');
+    let recognition;
+    let isMicOn = false;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = function() {
+            isMicOn = true;
+            micBtn.classList.add('listening');
+            document.getElementById('user-input').placeholder = "Listening... (Say Keywords)";
+        };
+        recognition.onend = function() {
+            if (isMicOn) { try { recognition.start(); } catch(e){} } 
+            else { micBtn.classList.remove('listening'); document.getElementById('user-input').placeholder = "Type or Speak..."; }
+        };
+        recognition.onresult = function(event) {
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+            }
+            if (finalTranscript) document.getElementById('user-input').value = finalTranscript;
+        };
+        recognition.onerror = function(event) { 
+            if (event.error === 'not-allowed') { isMicOn = false; micBtn.classList.remove('listening'); alert("Allow Mic access!"); }
+        };
+    } else { micBtn.style.display = 'none'; }
+
+    function toggleMic() {
+        if (!recognition) return;
+        if (isMicOn) { isMicOn = false; recognition.stop(); micBtn.classList.remove('listening'); }
+        else { isMicOn = true; recognition.start(); }
+    }
+
+    // --- 4. Logic & Validation ---
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const scenarioSelect = document.getElementById('scenario-select');
+    const listeningModeCheckbox = document.getElementById('listening-mode');
+
+    window.onload = startScenario;
+    
+    scenarioSelect.addEventListener('change', (e) => {
+        currentScenario = e.target.value;
+        startScenario();
+    });
+
+    function startScenario() {
+        chatBox.innerHTML = '';
+        currentStep = 0;
+        isScenarioComplete = false;
+        userInput.value = '';
+        userInput.disabled = false;
+        
+        setTimeout(() => {
+            const step = scenarios[currentScenario].steps[0];
+            addBotMessage(step.bot, step.cn);
+        }, 500);
+    }
+
+    function checkAnswer(input, keywords) {
+        const lowerInput = input.toLowerCase();
+        // If input contains ANY of the keywords, return true
+        return keywords.some(keyword => lowerInput.includes(keyword.toLowerCase()));
+    }
+
+    function sendMessage() {
+        if (isScenarioComplete) return;
+        const text = userInput.value.trim();
+        if (text === "") return;
+
+        // 1. Check Validity
+        const stepData = scenarios[currentScenario].steps[currentStep];
+        const isValid = checkAnswer(text, stepData.keywords);
+
+        // 2. Show User Message with Result
+        addUserMessage(text, isValid);
+        userInput.value = '';
+
+        // 3. Logic Flow
+        if (isValid) {
+            // Correct! Move to next
+            currentStep++;
+            if (currentStep < scenarios[currentScenario].steps.length) {
+                setTimeout(() => {
+                    const nextStep = scenarios[currentScenario].steps[currentStep];
+                    addBotMessage(nextStep.bot, nextStep.cn);
+                }, 1000);
+            } else {
+                isScenarioComplete = true;
+                setTimeout(() => {
+                    addBotMessage("Congratulations! You finished this scenario! 🎉", "恭喜！你完成了這個情境練習！");
+                    userInput.disabled = true;
+                }, 1000);
+            }
+        } else {
+            // Wrong! Stay on current step
+            // Optional: Bot gives a nudge without speaking fully
+            setTimeout(() => {
+                 // Create a system message, not a full bot bubble to avoid spamming audio
+                 const hintMsg = document.createElement('div');
+                 hintMsg.style.textAlign = "center";
+                 hintMsg.style.fontSize = "0.8rem";
+                 hintMsg.style.color = "#d9534f";
+                 hintMsg.style.margin = "5px 0";
+                 hintMsg.innerText = "Try again! Use keywords like: " + stepData.keywords.slice(0,2).join(", ");
+                 chatBox.appendChild(hintMsg);
+                 chatBox.scrollTop = chatBox.scrollHeight;
+            }, 500);
+        }
+    }
+
+    function addBotMessage(text, cnText) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', 'bot');
+        
+        const textSpan = document.createElement('span');
+        textSpan.innerText = text;
+        textSpan.classList.add('text-content'); 
+
+        if (listeningModeCheckbox.checked) {
+            textSpan.classList.add('blur-text');
+            textSpan.onclick = function() { this.classList.add('revealed'); this.classList.remove('blur-text'); };
+        }
+        msgDiv.appendChild(textSpan);
+
+        // Translation
+        const cnDiv = document.createElement('div');
+        cnDiv.classList.add('trans-text');
+        cnDiv.innerText = cnText;
+        msgDiv.appendChild(cnDiv);
+
+        // Speaker
+        const speakBtn = document.createElement('button');
+        speakBtn.className = 'speak-btn';
+        speakBtn.innerText = '🔊';
+        speakBtn.onclick = (e) => { e.stopPropagation(); speakText(text); };
+        msgDiv.appendChild(speakBtn);
+        
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        speakText(text);
+    }
+
+    function addUserMessage(text, isValid) {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', 'user');
+        msgDiv.innerText = text;
+
+        // Add Check or Cross Icon
+        const icon = document.createElement('div');
+        icon.classList.add('feedback-icon');
+        if (isValid) {
+            icon.classList.add('feedback-success');
+            icon.innerText = '✔';
+        } else {
+            icon.classList.add('feedback-error');
+            icon.innerText = '✘';
+        }
+        msgDiv.appendChild(icon);
+
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showHint() {
+        const stepData = scenarios[currentScenario].steps[currentStep];
+        userInput.value = stepData.hint;
+        userInput.focus();
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') sendMessage();
+    }
+</script>
+
+</body>
+</html>
